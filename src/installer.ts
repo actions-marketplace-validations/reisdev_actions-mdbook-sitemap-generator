@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 import * as io from '@actions/io';
+import * as exec from "@actions/exec";
 import {getOS} from './get-os';
 import {getURL} from './get-url';
 import * as path from 'path';
@@ -44,22 +45,11 @@ export async function installer(version: string) {
   await io.mkdirP(toolPath);
   core.addPath(toolPath);
 
-  // Download and extract mdbook binary
-  const tempDir: string = await createTempDir(baseLocation);
+  // Download and extract mdbook-sitemap-generator binary
   const toolAssets: string = await tc.downloadTool(toolURL);
-  let toolBin: string = '';
-  if (process.platform === 'win32') {
-    const toolExtractedFolder: string = await tc.extractZip(
-      toolAssets,
-      tempDir
-    );
-    toolBin = `${toolExtractedFolder}/mdbook-sitemap-generator.exe`;
-  } else {
-    const toolExtractedFolder: string = await tc.extractTar(
-      toolAssets,
-      tempDir
-    );
-    toolBin = `${toolExtractedFolder}/mdbook-sitemap-generator`;
-  }
-  await io.mv(toolBin, toolPath);
+
+  const toolExecutable: string = path.join(toolPath, "mdbook-sitemap-generator");
+
+  await io.mv(toolAssets, toolExecutable);
+  await exec.exec("chmod",["+x", toolExecutable]);
 }
